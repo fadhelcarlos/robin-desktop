@@ -1,0 +1,86 @@
+name: Mac release
+
+# Builds Robin's Mac installers from the private source (fadhelcarlos/robin) on this public repository's free macOS
+# runners and puts them on one of this repository's releases. Without a Developer ID certificate (MAC_CSC_LINK) the
+# app is signed ad hoc: it opens on Apple silicon after one allow in System Settings. With it, and the App Store
+# Connect key, it is signed and notarized and opens at once. Fire it with:
+#   gh workflow run mac-release.yml -R fadhelcarlos/robin-desktop -f ref=<commit> -f version=<x.y.z> -f tag=v<x.y.z>
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit of the private source"
+        required: true
+        default: "loop/progress"
+      version:
+        description: "The version the app says (x.y.z)"
+        required: true
+      tag:
+        description: "The release of this repository the installers go on (made as a draft if it isn't there)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      ROBIN_OFFICIAL_BUILD: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: fadhelcarlos/robin
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SRC_TOKEN }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+
+      - name: Install
+        run: npm ci
+
+      - name: Install the locked Electron runtime
+        run: node node_modules/electron/install.js
+
+      - name: Apply the release version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node --input-type=module -e "import {setReleaseVersion} from './scripts/release-version.mjs'; setReleaseVersion(process.cwd(), process.env.RELEASE_VERSION)"
+
+      - name: Build the Mac installers
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_API_KEY_P8_B64: ${{ secrets.ASC_API_KEY_P8_B64 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          # A secret that isn't set arrives as an empty string, which electron-builder reads as a certificate file.
+          [ -n "${CSC_LINK:-}" ] || unset CSC_LINK CSC_KEY_PASSWORD
+          [ -n "${ASC_API_KEY_P8_B64:-}" ] || unset ASC_API_KEY_P8_B64 ASC_KEY_ID ASC_ISSUER_ID
+          EXTRA=""
+          # No Developer ID: signed ad hoc, so it still starts on Apple silicon (an unsigned arm64 app doesn't).
+          if [ -z "${CSC_LINK:-}" ]; then EXTRA="-c.mac.identity=-"; fi
+          npm run electron:build -- --mac --publish never $EXTRA
+
+      - name: Put the installers on the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --draft --title "Robin $VERSION" --notes "Robin $VERSION"
+          shopt -s nullglob
+          files=(dist/*.dmg dist/*.zip dist/latest-mac.yml dist/*.blockmap)
+          [ ${#files[@]} -gt 0 ] || { echo '::error::No Mac installers were built'; exit 1; }
+          gh release upload "$TAG" "${files[@]}" -R "$GITHUB_REPOSITORY" --clobber
