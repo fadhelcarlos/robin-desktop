@@ -42,7 +42,8 @@ jobs:
           node-version: '24'
 
       - name: Install
-        run: npm ci
+        # The lock is written on Windows: on a Mac the platform packages it lacks are resolved here, the lock left as it was.
+        run: npm ci || npm install --no-audit --no-fund
 
       - name: Install the locked Electron runtime
         run: node node_modules/electron/install.js
