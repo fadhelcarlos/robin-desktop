@@ -74,8 +74,8 @@ jobs:
 
       - name: Links that lead outside the app (on failure)
         if: failure()
-        run: find dist -type l -exec sh -c 'printf "%s -> %s
-" "$1" "$(readlink "$1")"' _ {} ; | grep -v "Frameworks/.*/Versions/Current|Frameworks/.*/Resources ->|Frameworks/.*/Helpers ->|Frameworks/.*/Libraries ->" | head -40
+        run: |
+          find dist -type l | while read -r l; do echo "$l -> $(readlink "$l")"; done | grep -v "/Versions/Current" | grep -v "Frameworks/[^/]*/[A-Z][a-z]* -> Versions" | head -40
 
       - name: Put the installers on the release
         shell: bash
