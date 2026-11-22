@@ -69,7 +69,8 @@ jobs:
           [ -n "${ASC_API_KEY_P8_B64:-}" ] || unset ASC_API_KEY_P8_B64 ASC_KEY_ID ASC_ISSUER_ID
           EXTRA=""
           # No Developer ID: signed ad hoc, so it still starts on Apple silicon (an unsigned arm64 app doesn't).
-          if [ -z "${CSC_LINK:-}" ]; then EXTRA="-c.mac.identity=-"; fi
+          # Notarizing needs a Developer ID signature: an app signed ad hoc is never sent to Apple.
+          if [ -z "${CSC_LINK:-}" ]; then EXTRA="-c.mac.identity=-"; unset ASC_API_KEY_P8_B64 ASC_KEY_ID ASC_ISSUER_ID APPLE_TEAM_ID; fi
           npm run electron:build -- --mac --publish never $EXTRA
 
       - name: Links that lead outside the app (on failure)
