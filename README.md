@@ -23,11 +23,12 @@ The installers aren't code-signed yet. On Windows, choose **More info**, then **
 ## What it does
 
 - **One sentence in, finished work out.** Say what to build, or send a GitHub or Linear issue. Robin plans it into tasks, each with what done means, and builds them side by side, each with its own agent in its own git worktree.
-- **Checked, judged, reviewed.** Your own checks decide when a task is done. Every screen it touches is photographed in light and in dark and judged by a design jury of four; an agent from another vendor reviews every change. A finding goes back to its builder, never to you.
+- **Checked, judged, reviewed.** Your own checks decide when a task is done. Every screen a task answers for is photographed every round, measured to the pixel and judged by a design jury of four; an agent from another vendor reviews every change. A finding goes back to its builder, never to you.
 - **Only what is yours reaches you.** What an arbiter can rule in your place is ruled, and shown under Decided for you. What only you can answer reaches you at your desk or on your phone.
 - **The factory.** Every project's goals on one page: what needs you, what is being built, what was delivered. A project built for someone gets its report, ready to send.
 - **The Design studio.** New screens are drawn in several directions before they are built; compare rounds side by side, read a screen through lenses, draw a note on it.
 - **It remembers.** A brief of your project, kept current from the code, and what earlier agents learned go into every session, from every agent, through its hooks and MCP.
+- **Room on your disk.** Storage says what takes room, whose each thing is and what deleting it would lose; one press frees what tools make again, and nothing that exists only on your computer goes without you reading what would be lost.
 - **Yours.** Robin runs on your machine with your agents' own accounts. No Robin account, no telemetry. The phone pairs to your computer over your own Tailscale network.
 
 ## Requirements
